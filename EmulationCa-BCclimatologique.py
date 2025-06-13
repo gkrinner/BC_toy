@@ -40,7 +40,7 @@ for type in ["Adaptation", "ERBC"]:
 
     print()
     print(type)
-    print("==========")
+    print("----------")
     print()
 
     nt = 1000
