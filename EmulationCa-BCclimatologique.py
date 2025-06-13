@@ -27,7 +27,10 @@ dXdtC = np.zeros(npts)
 Xini = np.zeros(npts)
 X = np.zeros(npts)
 Xmoy = np.zeros(npts)
+XR = np.zeros(npts)
+XRmoy = np.zeros(npts)
 dXdtM = np.zeros(npts)
+dXdtR = np.zeros(npts)
 dXdtE = np.zeros(npts)
 Bias = np.zeros(npts)
 
@@ -52,6 +55,8 @@ for type in ["Adaptation", "ERBC"]:
     Xini[:] = Xref[:]
     X[:] = Xini[:]
     Xmoy[:] = 0.
+    XR[:] = Xini[:]
+    XRmoy[:] = 0.
     
     while ( it < nt ) :
        # time step
@@ -71,15 +76,24 @@ for type in ["Adaptation", "ERBC"]:
             
        # on ajoute la correction
        X[:] = X[:] + dt * dXdtC[:]
-            
-       # update "climatology"
+    
+       # the "reality". Same equations
+       dXdtR[0] = -1.0/tauM * ( XR[0] - Xref[0] ) + AmpNoise*(random.random()-.5)
+       dXdtR[1] = -1.0/tauM * ( XR[1] - Xref[1] ) + AmpNoise*(random.random()-.5)
+       dXdtR[2] = -1.0/tauM * ( XR[2] - Xref[2] ) + AmpNoise*(random.random()-.5)
+
+       XR[:] = XR[:] + dt * dXdtR[:]
+
+       # update "climatologies"
        if ( it == 1 ):
            Xmoy[:] = X[:]
+           XRmoy[:] = XR[:]
        else:
            Xmoy[:] = ((it-1)*Xmoy[:] + 1*X[:]) / it
-    
+           XRmoy[:] = ((it-1)*XRmoy[:] + 1*XR[:]) / it
+
        # the mean bias:
-       Bias[:] = Xmoy[:] - Xref[:]
+       Bias[:] = Xmoy[:] - XRmoy[:]
               
        if ( type == "Adaptation" ):
            # update the correction term
