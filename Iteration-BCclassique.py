@@ -30,8 +30,9 @@ iter = -1
 
 dXdtC = np.zeros(npts)
 X = np.zeros(npts)
-Xera = np.zeros(npts)
+XR = np.zeros(npts)
 dXdtM = np.zeros(npts)
+dXdtR = np.zeros(npts)
 dXdtE = np.zeros(npts)
 dXdtN = np.zeros(npts)
 BiaisNudge = np.zeros(npts)
@@ -54,7 +55,7 @@ while ( iter <= niter ):
         else:
             Biais = np.zeros(npts)
 
-        Xera[:] = Xini[:]
+        XR[:] = Xini[:]
         X[:] = Xini[:]
         t = 0.0
 
@@ -71,30 +72,34 @@ while ( iter <= niter ):
             dXdtM[0] = -1.0/tauM * ( X[0] - Xref[0] ) + AmpNoise*(random.random()-.5)
             dXdtM[1] = -1.0/tauM * ( X[1] - Xref[1] ) + AmpNoise*(random.random()-.5)
             dXdtM[2] = -1.0/tauM * ( X[2] - Xref[2] ) + AmpNoise*(random.random()-.5)
-    
-            # la reference : "ERA"
-            Xera[:] = Xera[:] + dt * dXdtM[:]
             
             # the error tendency
             dXdtE[:] = 1.0/tauE * (bias0[:]-X[:])
         
             # update state variable
             X[:] = X[:] + dt * (dXdtM[:] + dXdtE[:] + dXdtNmOld[:])
+
+            # la realite: same equations
+            dXdtR[0] = -1.0/tauM * ( XR[0] - Xref[0] ) + AmpNoise*(random.random()-.5)
+            dXdtR[1] = -1.0/tauM * ( XR[1] - Xref[1] ) + AmpNoise*(random.random()-.5)
+            dXdtR[2] = -1.0/tauM * ( XR[2] - Xref[2] ) + AmpNoise*(random.random()-.5)
+            XR[:] = XR[:] + dt * dXdtR[:]
             
             if ( type == "Adaptation" ):
 
                 # on nudge
-                dXdtN[:] = -1./tauN * (X[:]-Xera[:])
+                dXdtN[:] = -1./tauN * (X[:]-XR[:])
                 X[:] = X[:] + dt * dXdtN[:]
             
                 # update "climatology" of nudging tendencies
                 dXdtNm[:] = dXdtNm[:] + dXdtN[:]/nt
 
-                BiaisNudge[:] = BiaisNudge[:] + (X[:]-Xera[:])/nt
+                BiaisNudge[:] = BiaisNudge[:] + (X[:]-XR[:])/nt
 
             else:
 
-                Biais[:] = Biais[:] + (X[:]-Xera[:])/nt
+                Biais[:] = Biais[:] + (X[:]-XR[:])/nt
+    
         
   print()
   print("Iteration : ", iter)
