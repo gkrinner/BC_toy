@@ -26,8 +26,11 @@ iter = 0
 dXdtC = np.zeros(npts)
 Xini = np.zeros(npts)
 X = np.zeros(npts)
+Xera = np.zeros(npts)
 Xmoy = np.zeros(npts)
+Xeramoy = np.zeros(npts)
 dXdtM = np.zeros(npts)
+dXdtEra = np.zeros(npts)
 dXdtE = np.zeros(npts)
 Bias = np.zeros(npts)
 
@@ -52,6 +55,8 @@ for type in ["Adaptation", "ERBC"]:
     Xini[:] = Xref[:]
     X[:] = Xini[:]
     Xmoy[:] = 0.
+    Xera[:] = Xini[:]
+    Xeramoy[:] = 0.
     
     while ( it < nt ) :
        # time step
@@ -71,15 +76,25 @@ for type in ["Adaptation", "ERBC"]:
             
        # on ajoute la correction
        X[:] = X[:] + dt * dXdtC[:]
+
+       # era
+       # the ideal model. Some "equations" that should give a quasi-stationary solution around 0
+       dXdtEra[0] = -1.0/tauM * ( Xera[0] - Xref[0] ) + AmpNoise*(random.random()-.5)
+       dXdtEra[1] = -1.0/tauM * ( Xera[1] - Xref[1] ) + AmpNoise*(random.random()-.5)
+       dXdtEra[2] = -1.0/tauM * ( Xera[2] - Xref[2] ) + AmpNoise*(random.random()-.5)
+       Xera[:] = Xera[:] + dt * dXdtEra[:]
             
        # update "climatology"
        if ( it == 1 ):
            Xmoy[:] = X[:]
+           Xeramoy[:] = Xera[:]
        else:
            Xmoy[:] = ((it-1)*Xmoy[:] + 1*X[:]) / it
+           Xeramoy[:] = ((it-1)*Xeramoy[:] + 1*Xera[:]) / it
     
        # the mean bias:
-       Bias[:] = Xmoy[:] - Xref[:]
+       # Bias[:] = Xmoy[:] - Xref[:]
+       Bias[:] = Xmoy[:] - Xeramoy[:]
               
        if ( type == "Adaptation" ):
            # update the correction term
