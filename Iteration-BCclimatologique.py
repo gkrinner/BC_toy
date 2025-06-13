@@ -41,6 +41,9 @@ random.seed(10)
 dt = 1.0
 dXdtC[:] = 0.
 
+print("Iteration a faire")
+quit()
+
 for type in ["Adaptation", "ERBC"]:
 
     print()
