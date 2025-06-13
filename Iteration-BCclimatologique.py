@@ -16,13 +16,11 @@ npts = 3
 
 Xref = np.zeros(npts)
 tauM = 10.0 # constante de temps du modele
-tauE = 20.0 # constante de temps de croissance de l'erreur
-tauC = 30.0 # constante de temps de la correction
+tauE = 6.0 # constante de temps de croissance de l'erreur
+tauC = 3.0 # constante de temps de la correction
 bias0 = np.array([1.0,-1.0,-2.0])
 
-random.seed(10)
-
-niter = 10
+niter = 0
 iter = 0
 
 dXdtC = np.zeros(npts)
@@ -31,56 +29,77 @@ X = np.zeros(npts)
 Xmoy = np.zeros(npts)
 dXdtM = np.zeros(npts)
 dXdtE = np.zeros(npts)
+Bias = np.zeros(npts)
 
-while ( iter <= niter ):
-    
-    t = 0.0
-    dt = 1.0
-    nt = 1000
-    Xini[:] = Xref[:]
-    
-    X[:] = Xini[:]
-    Xmoy = np.zeros(npts)
-    it = 0
-    while ( it < nt ) :
-        # time step
-        t = t+dt
-        it = it+1
-        
-        # the ideal model, some equations that should give a quasi-stationary solution around 0
-        dXdtM[0] = -1.0/tauM * ( X[0] - Xref[0] ) + 0.1*(random.random()-.5)
-        dXdtM[1] = -1.0/tauM * ( X[1] - Xref[1] ) + 0.1*(random.random()-.5)
-        dXdtM[2] = -1.0/tauM * ( X[2] - Xref[2] ) + 0.1*(random.random()-.5)
+AmpNoise = 0.1
 
-        # the error tendency
-        dXdtE[:] = 1.0/tauE * bias0[:]*(tauE/tauM)
-    
-        # update state variable
-        X[:] = X[:] + dt * (dXdtM[:] + dXdtE[:])
-        
-        # on ajoute la correction
-        X[:] = X[:] + dt * dXdtC[:]
-        
-        # update "climatology"
-        Xmoy[:] = Xmoy[:] + X[:]
-    
-    Xmoy[:] = Xmoy[:]/nt
+random.seed(10)
+
+dt = 1.0
+dXdtC[:] = 0.
+
+for type in ["Adaptation", "ERBC"]:
+
     print()
-    print("Iteration : ", iter)
-    print("Correction utilisee :", dXdtC[:])
-    print("Biais :", Xmoy[:]-Xref[:])
-    rmse = (np.sum((Xmoy[:]-Xref[:])**2)/npts)**.5
-    print("RMSE :",rmse)
+    print(type)
+    print("----------")
+    print()
 
-    if ( iter > 0 ):
-        print("Amélioration du RMSE (%) :", 100*(1.0-np.abs(rmse)/np.abs(oldrmse)))
-
-    oldrmse = rmse
+    nt = 1000
+    t = 0.0
+    it = 0
     
-    # update bias correction: the reference value is Xref
-    dXdtC[:] = dXdtC[:] -1.0/tauC * (Xmoy[:]-Xref[:])
-    print("Nouvelle correction :", dXdtC[:])
+    Xini[:] = Xref[:]
+    X[:] = Xini[:]
+    Xmoy[:] = 0.
     
-    iter = iter+1
+    while ( it < nt ) :
+       # time step
+       t = t+dt
+       it = it+1
+            
+       # the ideal model. Some "equations" that should give a quasi-stationary solution around 0
+       dXdtM[0] = -1.0/tauM * ( X[0] - Xref[0] ) + AmpNoise*(random.random()-.5)
+       dXdtM[1] = -1.0/tauM * ( X[1] - Xref[1] ) + AmpNoise*(random.random()-.5)
+       dXdtM[2] = -1.0/tauM * ( X[2] - Xref[2] ) + AmpNoise*(random.random()-.5)
+            
+       # the error tendency
+       dXdtE[:] = 1.0/tauE * bias0[:] * tauE/tauM
+        
+       # update state variable
+       X[:] = X[:] + dt * (dXdtM[:] + dXdtE[:])
+            
+       # on ajoute la correction
+       X[:] = X[:] + dt * dXdtC[:]
+            
+       # update "climatology"
+       if ( it == 1 ):
+           Xmoy[:] = X[:]
+       else:
+           Xmoy[:] = ((it-1)*Xmoy[:] + 1*X[:]) / it
+    
+       # the mean bias:
+       Bias[:] = Xmoy[:] - Xref[:]
+              
+       if ( type == "Adaptation" ):
+           # update the correction term
+           dXdtC[:] = -1.0/tauC * Bias[:]
+           # dXdtC[:] = 0. # converges to prescribed bias if correction set to 0
+              
+       # some output
+       if ( it < 10 ):
+         outputfreq=1
+       elif ( it < 100 ):
+         outputfreq=10
+       else:
+         outputfreq=100
 
+       if ( np.mod(it,outputfreq) == 0 ):
+          print()
+          print("Pas de temps : ", it)
+          print("Correction utilisee :", dXdtC[:])
+          print("Biais :", Bias[:])
+          rmse = (np.sum((Bias[:])**2)/npts)**.5
+          print("RMSE :",rmse)
+        
 print("Fini")

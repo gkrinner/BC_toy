@@ -16,7 +16,7 @@ npts = 3
 
 Xref = np.zeros(npts)
 tauM = 10.0 # constante de temps du modele
-tauE = 20.0 # constante de temps de croissance de l'erreur
+tauE = 6.0 # constante de temps de croissance de l'erreur
 tauC = 3.0 # constante de temps de la correction
 bias0 = np.array([1.0,-1.0,-2.0])
 
@@ -30,6 +30,8 @@ Xmoy = np.zeros(npts)
 dXdtM = np.zeros(npts)
 dXdtE = np.zeros(npts)
 Bias = np.zeros(npts)
+
+AmpNoise = 0.1
 
 random.seed(10)
 
@@ -57,9 +59,9 @@ for type in ["Adaptation", "ERBC"]:
        it = it+1
             
        # the ideal model. Some "equations" that should give a quasi-stationary solution around 0
-       dXdtM[0] = -1.0/tauM * ( X[0] - Xref[0] ) + 0.1*(random.random()-.5)
-       dXdtM[1] = -1.0/tauM * ( X[1] - Xref[1] ) + 0.1*(random.random()-.5)
-       dXdtM[2] = -1.0/tauM * ( X[2] - Xref[2] ) + 0.1*(random.random()-.5)
+       dXdtM[0] = -1.0/tauM * ( X[0] - Xref[0] ) + AmpNoise*(random.random()-.5)
+       dXdtM[1] = -1.0/tauM * ( X[1] - Xref[1] ) + AmpNoise*(random.random()-.5)
+       dXdtM[2] = -1.0/tauM * ( X[2] - Xref[2] ) + AmpNoise*(random.random()-.5)
             
        # the error tendency
        dXdtE[:] = 1.0/tauE * bias0[:] * tauE/tauM
