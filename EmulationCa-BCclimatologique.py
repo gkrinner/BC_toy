@@ -93,7 +93,7 @@ for type in ["Adaptation", "ERBC"]:
            XRmoy[:] = ((it-1)*XRmoy[:] + 1*XR[:]) / it
 
        # the mean bias:
-       Bias[:] = Xmoy[:] - XRmoy[:]
+       Bias[:] = Xmoy[:] - Xref[:]
               
        if ( type == "Adaptation" ):
            # update the correction term
@@ -113,6 +113,8 @@ for type in ["Adaptation", "ERBC"]:
           print("Pas de temps : ", it)
           print("Correction utilisee :", dXdtC[:])
           print("Biais :", Bias[:])
+          print("X :", X[:])
+          print("XR :", XR[:])
           rmse = (np.sum((Bias[:])**2)/npts)**.5
           print("RMSE :",rmse)
         
